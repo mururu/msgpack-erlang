@@ -152,8 +152,10 @@ pack_raw(Bin) ->
             << 2#101:3, Len:5, Bin/binary >>;
         Len when Len < 16#10000 -> % 65536
             << 16#DA:8, Len:16/big-unsigned-integer-unit:1, Bin/binary >>;
-        Len ->
-            << 16#DB:8, Len:32/big-unsigned-integer-unit:1, Bin/binary >>
+        Len when Len < 16#100000000 ->
+            << 16#DB:8, Len:32/big-unsigned-integer-unit:1, Bin/binary >>;
+        _ ->
+            {error, {badarg, Bin}}
     end.
 
 -spec pack_raw2(binary()) -> binary().
