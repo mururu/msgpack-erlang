@@ -59,6 +59,10 @@ pack(Map, Opt = ?OPTION{interface=jsx}) when Map =:= [{}]->
 pack([{_,_}|_] = Map, Opt = ?OPTION{interface=jsx}) ->
     pack_map(Map, Opt);
 
+%% maps interface
+pack(Map, Opt = ?OPTION{interface=maps}) when is_map(Map) ->
+   pack_map(maps:to_list(Map), Opt);
+
 pack(List, #options_v2{enable_str=true}=Opt)  when is_list(List) ->
     try
         case lists:all(fun is_integer/1, List) of

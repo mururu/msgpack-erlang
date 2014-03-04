@@ -21,15 +21,17 @@
 
 -type msgpack_map_jiffy() :: {[{msgpack_term(), msgpack_term()}]}.
 
--type msgpack_map() :: msgpack_map_jsx() | msgpack_map_jiffy().
+-type msgpack_map_maps() :: #{ msgpack_term() => msgpack_term() }.
+
+-type msgpack_map() :: msgpack_map_jsx() | msgpack_map_jiffy() | msgpack_map_maps().
 
 -type msgpack_map_unpacker() ::
         fun((binary(), non_neg_integer(), msgpack_map(), msgpack_option()) ->
                    {msgpack_map(), binary()} | no_return() ).
 
 %% Erlang representation of msgpack data.
--type msgpack_term() :: [msgpack_term()] | msgpack_map_jsx() |
-                        msgpack_map_jiffy() | integer() | float() | binary().
+-type msgpack_term() :: [msgpack_term()] | msgpack_map_jsx() | msgpack_map_jiffy() |
+                        msgpack_map_maps() | integer() | float() | binary().
 
 %% @doc ext_packer that packs only tuples with length > 2
 -type msgpack_ext_packer()   :: fun((tuple(), msgpack:options()) ->
@@ -42,22 +44,22 @@
                    {ok, msgpack_term()} | {error, any()}).
 
 -type msgpack_list_options() :: [
-                                 {format, jsx|jiffy} |
-                                 jsx | jiffy |
+                                 {format, jsx|jiffy|maps} |
+                                 jsx | jiffy | maps |
                                  {allow_atom, none|pack} |
                                  {enable_str, boolean()} |
                                  {ext, {msgpack_ext_packer(),msgpack_ext_unpacker()}}
                                 ].
 
 -record(options_v1, {
-          interface = jiffy :: jiffy | jsx,
+          interface = jiffy :: jiffy | jsx | maps,
           map_unpack_fun = fun msgpack_unpacker:unpack_map_jiffy/4 ::
                                  msgpack_map_unpacker(),
           impl = erlang     :: erlang | nif
          }).
 
 -record(options_v2, {
-          interface = jiffy :: jiffy | jsx,
+          interface = jiffy :: jiffy | jsx | maps,
           map_unpack_fun = fun msgpack_unpacker:unpack_map_jiffy/4 ::
                                  msgpack_map_unpacker(),
           impl = erlang      :: erlang | nif,

@@ -23,7 +23,7 @@
 -include("msgpack.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
--export([unpack_map_jiffy/4, unpack_map_jsx/4]).
+-export([unpack_map_jiffy/4, unpack_map_jsx/4, unpack_map_maps/4]).
 
 %% unpack them all
 -spec unpack_stream(Bin::binary(), msgpack_option()) -> {msgpack:object(), binary()} | no_return().
@@ -169,7 +169,9 @@ unpack_array(Bin, Len, Acc, Opt) ->
 map_unpacker(jiffy) ->
     fun ?MODULE:unpack_map_jiffy/4;
 map_unpacker(jsx) ->
-    fun ?MODULE:unpack_map_jsx/4.
+    fun ?MODULE:unpack_map_jsx/4;
+map_unpacker(maps) ->
+    fun ?MODULE:unpack_map_maps/4.
 
 
 %% Users SHOULD NOT send too long list: this uses lists:reverse/1
@@ -194,6 +196,16 @@ unpack_map_jsx(Bin, Len, Acc, Opt) ->
     {Key, Rest} = unpack_stream(Bin, Opt),
     {Value, Rest2} = unpack_stream(Rest, Opt),
     unpack_map_jsx(Rest2, Len-1, [{Key,Value}|Acc], Opt).
+
+-spec unpack_map_maps(binary(), non_neg_integer(),
+                      msgpack:msgpack_map(), msgpack_option()) ->
+                             {mspgack:msgpack_map(), binary()} | no_return().
+unpack_map_maps(Bin, 0,   Acc, _) ->
+    {maps:from_list(Acc), Bin};
+unpack_map_maps(Bin, Len, Acc, Opt) ->
+    {Key, Rest} = unpack_stream(Bin, Opt),
+    {Value, Rest2} = unpack_stream(Rest, Opt),
+    unpack_map_maps(Rest2, Len-1, [{Key,Value}|Acc], Opt).
 
 unpack_string_or_raw(V, ?OPTION{enable_str=true} = _Opt, Rest) ->
     {unpack_string(V), Rest};

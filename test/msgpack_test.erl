@@ -53,6 +53,20 @@ test_data_jiffy()->
      {[]}, {hoge}
     ].
 
+test_data_maps()->
+    [true, false, nil,
+     0, 1, 2, 123, 512, 1230, 678908, 16#FFFFFFFFFF,
+     -1, -23, -512, -1230, -567898, -16#FFFFFFFFFF,
+     123.123, -234.4355, 1.0e-34, 1.0e64,
+     [23, 234, 0.23],
+     <<"hogehoge">>, <<"243546rf7g68h798j", 0, 23, 255>>,
+     <<"hoasfdafdas][">>,
+     [0,42, <<"sum">>, [1,2]], [1,42, nil, [3]],
+     -234, -40000, -16#10000000, -16#100000000,
+     42,
+     #{}, {hoge}
+    ].
+
 compare_all([], [])-> ok;
 compare_all([],  R)-> {toomuchrhs, R};
 compare_all(L,  [])-> {toomuchlhs, L};
@@ -83,6 +97,16 @@ port_jiffy_test()->
 port_jsx_test()->
     Tests = test_data_jsx(),
     ?assertEqual({[Tests],<<>>}, msgpack:unpack(msgpack:pack([Tests], [{format,jsx}]), [{format,jsx}])),
+
+                                                %    Port = open_port({spawn, "ruby ../test/crosslang.rb"}, [binary, eof]),
+                                                %    true = port_command(Port, msgpack:pack(Tests)),
+                                                %    ?assertEqual({Tests, <<>>}, msgpack:unpack(port_receive(Port))),
+                                                %    port_close(Port).
+    ok.
+
+port_maps_test()->
+    Tests = test_data_maps(),
+    ?assertEqual({[Tests],<<>>}, msgpack:unpack(msgpack:pack([Tests], [{format,maps}]), [{format,maps}])),
 
                                                 %    Port = open_port({spawn, "ruby ../test/crosslang.rb"}, [binary, eof]),
                                                 %    true = port_command(Port, msgpack:pack(Tests)),
@@ -143,6 +167,24 @@ issue_jiffy_5_test() ->
     ?assertEqual(Bin0, Encoded),
 
     {ok, Decoded} = msgpack:unpack(Bin0, [{format,jiffy}, {enable_str,true}]),
+    ?assertEqual(Term, Decoded).
+
+issue_maps_5_test() ->
+    %% {'type':"workers", 'data':[{'workerid': "std.1", 'slots':[] }]}
+    Term = #{
+             <<"type">> => <<"workers">>,
+             <<"data">> => [
+                            #{<<"workerid">> => <<"std.1">>, <<"slots">> => []}
+                           ]
+            },
+    Encoded = msgpack:pack(Term, [{format,maps}, {enable_str,true}]),
+    %% Map is ordered by key
+    Bin0 = <<130,196,4,100,97,116,97,145,130,196,5,115,108,111,116,115,160,
+            196,8,119,111,114,107,101,114,105,100,196,5,115,116,100,46,49,
+            196,4,116,121,112,101,196,7,119,111,114,107,101,114,115>>,
+    ?assertEqual(Bin0, Encoded),
+
+    {ok, Decoded} = msgpack:unpack(Bin0, [{format,maps}, {enable_str,true}]),
     ?assertEqual(Term, Decoded).
 
 
@@ -227,6 +269,25 @@ map_test_()->
               EmptyMap = [{}],
               Binary = pack(EmptyMap, [{format,jsx}]),
               ?assertEqual({ok, EmptyMap}, unpack(Binary, [{format,jsx}]))
+      end},
+     {"maps length 16",
+      fun() ->
+              Map = maps:from_list([ {X, X * 2} || X <- lists:seq(0, 16) ]),
+              Binary = pack(Map, [{format,maps}]),
+              ?assertEqual({ok, Map}, unpack(Binary, [{format,maps}]))
+      end},
+     {"maps length 32",
+      fun() ->
+              Map = maps:from_list([ {X, X * 2} || X <- lists:seq(0, 16#010000) ]),
+              Binary = pack(Map, [{format,maps}]),
+              % too slow because Map is ordered
+              %?assertEqual({ok, Map}, unpack(Binary, [{format,maps}]))
+      end},
+     {"maps empty",
+      fun() ->
+          EmptyMap = #{},
+              Binary = pack(EmptyMap, [{format,maps}]),
+              ?assertEqual({ok, EmptyMap}, unpack(Binary, [{format,maps}]))
       end}
     ].
 

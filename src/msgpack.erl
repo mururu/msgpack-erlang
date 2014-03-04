@@ -126,7 +126,11 @@ parse_options([jiffy|TL], Opt0) ->
     Opt = Opt0?OPTION{interface=jiffy,
                       map_unpack_fun=msgpack_unpacker:map_unpacker(jiffy)},
     parse_options(TL, Opt);
-parse_options([{format,Type}|TL], Opt0) when Type =:= jsx; Type =:= jiffy ->
+parse_options([maps|TL], Opt0) ->
+    Opt = Opt0?OPTION{interface=maps,
+                      map_unpack_fun=msgpack_unpacker:map_unpacker(maps)},
+    parse_options(TL, Opt);
+parse_options([{format,Type}|TL], Opt0) when Type =:= jsx; Type =:= jiffy; Type =:= maps->
     Opt = Opt0?OPTION{interface=Type,
                       map_unpack_fun=msgpack_unpacker:map_unpacker(Type)},
     parse_options(TL, Opt);
